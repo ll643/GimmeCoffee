@@ -141,49 +141,49 @@ KMinor = 2
 L_tube = cdc.len_cdc_tube(FlowPlant, ConcDoseMax, ConcStock, DiamTubeAvail, HeadlossCDC, LenCDCTubeMax, temp, en_chem, KMinor)
 print('The length of the dosing tube is', ut.round_sf(L_tube,2))
 
+Nu_pacl=cdc.viscosity_kinematic_pacl(60, temp)
+
+DiamTube=cdc.diam_cdc_tube(FlowPlant, ConcDoseMax, ConcStock, DiamTubeAvail, HeadlossCDC, LenCDCTubeMax,temp, en_chem, KMinor)
+
+
+FlowPipe=pc.flow_pipe(DiamTube, HeadlossCDC, L_tube, Nu_pacl, PipeRough, KMinor).to(u.liter/u.s)
+
 Number_Tubes = cdc.n_cdc_tube(FlowPlant,ConcDoseMax, ConcStock,DiamTubeAvail, HeadlossCDC, LenCDCTubeMax,temp, en_chem, KMinor)
 
-Nu = pc.viscosity_kinematic(temp)
 
-DiamTubeAvail.to(u.m)
-HeadlossCDC.to(u.m)
-L_tube.to(u.m)
-PipeRough.to(u.m)
+Total_Dose= (Number_Tubes*FlowPipe*ConcStock/FlowPlant).to(u.milligram/u.liter)
 
-DiamTube= 1/8 * u.inch
-Total_Dose = pc.flow_pipe(DiamTube, HeadlossCDC, L_tube, Nu, PipeRough, KMinor)
-
-Dose_per_Pipe= Total_Dose/Number_Tubes
-
-print('The maximum coagulant dose per pipe is ',ut.round_sf(Dose_per_Pipe.to(u.mL/u.s),2))
+print('The maximum coagulant dose is ',ut.round_sf(Total_Dose,2))
 ```
 
 #Part 7
 An AguaClara plant will be upgraded from 20 L/s to 30 L/s by adding two sedimentation tanks, increasing the head loss through the flocculator, and adding an additional StaRS filter. Give the current design specs for the CDC. Propose a simple modification to the CDC to handle the additional flow.
 
 ```python
-FlowPlant2= 70 * u.L/u.s
-HeadlossCDC2= 40 * u.cm
-DiamTubeAvail2 = np.array([1/16]) * u.inch
-DiamTube2 = 1/16 * u.inch
+FlowPlant20= 20 * u.L/u.s
 
-L_tube2 = cdc.len_cdc_tube(FlowPlant, ConcDoseMax, ConcStock, DiamTubeAvail2, HeadlossCDC, LenCDCTubeMax, temp, en_chem, KMinor)
+DiamTube20=cdc.diam_cdc_tube(FlowPlant20, ConcDoseMax, ConcStock, DiamTubeAvail, HeadlossCDC, LenCDCTubeMax, temp, en_chem, KMinor)
 
-number2 = cdc.n_cdc_tube(FlowPlant2,ConcDoseMax, ConcStock,DiamTubeAvail2, HeadlossCDC2, LenCDCTubeMax,temp, en_chem, KMinor)
+L_tube20= cdc.len_cdc_tube(FlowPlant20, ConcDoseMax, ConcStock, DiamTubeAvail, HeadlossCDC, LenCDCTubeMax, temp, en_chem, KMinor)
 
-DiamTubeAvail2.to(u.m)
-HeadlossCDC2.to(u.m)
-L_tube2.to(u.m)
+Number_Tubes20 = cdc.n_cdc_tube(FlowPlant20,ConcDoseMax, ConcStock,DiamTubeAvail, HeadlossCDC, LenCDCTubeMax,temp, en_chem, KMinor)
 
-DiamTube2= 1/16 * u.inch
-dose2= pc.flow_pipe(DiamTube2, HeadlossCDC2, L_tube2, Nu, PipeRough, KMinor)
 
-dose_per_pipe2 = dose/(number2)
+print('For 20L/s plant, the diameter of dosing tube is ',DiamTube20.to(u.inch),', the length of the dosing tube is ',ut.round_sf(L_tube20,2),'and the number of the dosing tube is ',ut.round_sf(Number_Tubes20,1),'.')
 
-dose_per_pipe2.to(u.mL/u.s)
+FlowPlant30= 30 * u.L/u.s
 
-print('The maximum coagulant dose per pipe is ',ut.round_sf(dose_per_pipe2.to(u.mL/u.s),2))
+DiamTube30=cdc.diam_cdc_tube(FlowPlant30, ConcDoseMax, ConcStock, DiamTubeAvail, HeadlossCDC, LenCDCTubeMax, temp, en_chem, KMinor)
+
+L_tube30= cdc.len_cdc_tube(FlowPlant30, ConcDoseMax, ConcStock, DiamTubeAvail, HeadlossCDC, LenCDCTubeMax, temp, en_chem, KMinor)
+
+Number_Tubes30 = cdc.n_cdc_tube(FlowPlant30,ConcDoseMax, ConcStock,DiamTubeAvail, HeadlossCDC, LenCDCTubeMax,temp, en_chem, KMinor)
+
+
+print('For 30L/s plant, the diameter of dosing tube is ',DiamTube30.to(u.inch),', the length of the dosing tube is ',ut.round_sf(L_tube30,2),'and the number of the dosing tube is ',ut.round_sf(Number_Tubes30,1),'.')
 ```
+The number of the tubes increased from 2 to 3.
+
 We applied the design upgrades to the previous model for the CDC, and found that these changes caused the coagulant dose to decrease.
 
 
@@ -193,18 +193,30 @@ The LFOM for the 20 L/s plant was designed to have a safety factor of 1.2 and th
 ```python
 import aguaclara.design.lfom as lfom
 mylfom = lfom.LFOM(safety_factor=1.2)
-mylfom = lfom.LFOM(20 * u.L/u.s,safety_factor=1.2)
-mylfom.nom_diam_pipe
-print('The LFOM for the 20L/s plant has a diameter of',ut.round_sf(mylfom.nom_diam_pipe,2),'.')
+mylfom20 = lfom.LFOM(20 * u.L/u.s,safety_factor=1.2)
+mylfom20.nom_diam_pipe
+print('The LFOM for the 20L/s plant has a diameter of',ut.round_sf(mylfom20.nom_diam_pipe,2),'.')
 #8 in
 
 mylfom = lfom.LFOM(safety_factor=1.2)
-mylfom = lfom.LFOM(30 * u.L/u.s,safety_factor=1.2)
-mylfom.nom_diam_pipe
-print('The LFOM for the 30L/s plant has a diameter of',ut.round_sf(mylfom.nom_diam_pipe,2),'.')
+mylfom30 = lfom.LFOM(30 * u.L/u.s,safety_factor=1.2)
+mylfom30.nom_diam_pipe
+print('The LFOM for the 30L/s plant has a diameter of',ut.round_sf(mylfom30.nom_diam_pipe,2),'.')
 #10 in
 
-The LFOM diameter will need to be increased from 8in to 10in to handle a flow of 30 L/s.
+print('The LFOM diameter will need to be increased from',mylfom20.nom_diam_pipe ,'to ',mylfom30.nom_diam_pipe ,'to handle a flow of 30 L/s, assuming that safety factor stays the same.')
 ```
 #Part 9
 Could you use the original LFOM diameter by increasing the depth of the entrance tank by 10 or 20 cm? The new LFOM depth range would then be either 30 or 40 cm.
+
+```python
+mylfom = lfom.LFOM(safety_factor=1.2)
+
+newLFOM1=lfom.LFOM(q=30*u.L/u.s,hl=30*u.cm,safety_factor=1.2)
+newLFOM1.nom_diam_pipe
+
+newLFOM2=lfom.LFOM(q=30*u.L/u.s,hl=40*u.cm,safety_factor=1.2)
+newLFOM2.nom_diam_pipe
+
+print('The new LFOM depth range of 30cm works with the original diameter, but the depth range of 40cm does not work with the original diameter.')
+```
