@@ -1,5 +1,7 @@
+# Flow Control and Measurement Design Challenge
+##Team GimmeCoffee
 Lynn Li (ll643), Allison Tran (ant42), Yeonjin Yun (yy374)
-Team GimmeCoffee
+
 
 Researchers in the AguaClara laboratory collected the following head loss data through a 1/8" diameter tube that was 2 m long using water at 22°C. The data is in a comma separated data (.csv) file named Head_loss_vs_Flow_dosing_tube_data.csv. Use the pandas read csv function (pd.read_csv('filename.csv')) to read the data file. Display the data so you can see how it is formatted.
 ```python
@@ -20,7 +22,7 @@ head_loss_data = pd.read_csv(url)
 array = np.array(head_loss_data)
 head_loss_data
 ```
-#Part 1
+### 1)
 Using the data table above, assign the head loss and flow rate data to separate 1-D arrays. Attach the correct units. np.array can extract the data by simply inputting the text string of the column header. Name the array of flow rates Q_data. Here is example code to create the first array:
 ```python
 HL_data=np.array(head_loss_data['Head loss (m)'])*u.m
@@ -29,7 +31,7 @@ print('There are',HL_data.size,'elements in this array.')
 Q_data=np.array(head_loss_data['Flow rate (mL/min)'])*(u.mL/u.min)
 print('There are',Q_data.size,'elements in this array.')
 ```
-#Part 2
+### 2)
 Calculate and report the maximum and minimum Reynolds number for this data set. Use the tube and temperature parameters specified above. Use the numpy min and max functions which take arrays as their inputs.
 ```python
 PipeRough = 0*u.mm
@@ -43,7 +45,7 @@ Max=np.amax(Reynolds)
 print('The maximum Reynolds number for this data set is ',ut.round_sf(Max,3),'.')
 print('The minimum Reynolds number for this data set is ',ut.round_sf(Min,3),'.')
 ```
-#Part 3
+### 3)
 You will now create a graph of head loss vs flow for the tube mentioned in the previous problems. This graph will have two sets of data: the real data contained within the csv file and a hydraulic model. The hydraulic model is what we would expect the head loss through the tube to be in an ideal world for any given flow. When calculating the hydraulic model head loss, assume that minor losses are negligible. Plot the data from the csv file as individual data points and the hydraulic model head loss as a continuous curve. Make the y-axis have units of cm and the x-axis have units of mL/s.
 ```python
 from scipy.optimize import curve_fit
@@ -86,7 +88,7 @@ plt.show()
 RMSE_Kminor = (np.sqrt(np.var(np.subtract((HL_curvefit(Q_data, *popt)),HL_data.magnitude)))*u.m).to(u.cm)
 print('The root mean square error for the model fit when adjusting the minor loss coefficient was',ut.round_sf(RMSE_Kminor,2))
 ```
-#Part 4
+### 4)
 Repeat the analysis above, but this time assume that the minor loss coefficient is zero and that diameter is the unknown parameter. The bounds specified in the line beginning with popt, pcov should be changed from the previous question (which had bounds from 0 to 20) to the new bounds of 0.001 to 0.01.
 
 Hint: You only need to change the name of the defined function (perhaps "HL_curvefit2"?) and adjust its inputs/values.
@@ -100,7 +102,8 @@ def HL_curvefit2(FlowRate, D_tube):
 
 KMinor= 0
 popt, pcov = curve_fit(HL_curvefit2, Q_data, HL_data, bounds=[[0.001],[0.01]])
-plt.plot(Q_data.to(u.mL/u.s), ((HL_curvefit2(Q_data, *popt))*u.m).to(u.cm), 'r-', label='No Minor Loss')
+plt.plot(Q_data.to(u.mL/u.s), ((HL_curvefit2(Q_data, *popt))*u.m).to(u.cm), 'bo', label='No Minor Loss')
+plt.plot(Q_data.to(u.mL/u.s), ((HL_curvefit(Q_data, *popt))*u.m).to(u.cm), 'r-', label='Minor Loss')
 plt.xlabel('Flow Rate (mL/s)')
 plt.ylabel('Head Loss (cm)')
 plt.title('Flow Rate vs Head Loss')
@@ -112,12 +115,12 @@ RMSE_Kminor = (np.sqrt(np.var(np.subtract((HL_curvefit2(Q_data, *popt)),HL_data.
 print('The root mean square error for the model fit when adjusting the minor loss coefficient was',ut.round_sf(RMSE_Kminor,2))
 ```
 
-#Part 5
+### 5)
 Changes to which of the two parameters, minor loss coefficient or tube diameter, results in a better fit to the data?
 
 Changes to minor loss resulted in a better fit to the data. The root mean square error of a varied minor loss was smaller than that of a varied tube diameter.
 
-#Part 6
+### 6)
 Create a design for a chemical dose controller using aguaclara. Use the AguaClara cdc functions to obtain the diameter, length, and number of dosing tubes that are required. Then take that design and use the physchem functions for flow in a pipe to calculate the maximum coagulant dose that it will deliver. This design and check is a powerful tool to ensure that you don't make mistakes because the design and the check are done using different code.
 
 I've included the code necessary to get the length of the dosing tubes. Note that we are currently specifying the diameter of the dosing tubes to be 1/8".
@@ -154,9 +157,11 @@ Number_Tubes = cdc.n_cdc_tube(FlowPlant,ConcDoseMax, ConcStock,DiamTubeAvail, He
 Total_Dose= (Number_Tubes*FlowPipe*ConcStock/FlowPlant).to(u.milligram/u.liter)
 
 print('The maximum coagulant dose is ',ut.round_sf(Total_Dose,2))
+print('The number of tubes needed is ',ut.round_sf(Number_Tubes,1))
+print('The diameter of the tube is ',ut.round_sf(DiamTube.to(u.inch),3))
 ```
 
-#Part 7
+### 7)
 An AguaClara plant will be upgraded from 20 L/s to 30 L/s by adding two sedimentation tanks, increasing the head loss through the flocculator, and adding an additional StaRS filter. Give the current design specs for the CDC. Propose a simple modification to the CDC to handle the additional flow.
 
 ```python
@@ -187,7 +192,7 @@ The number of the tubes increased from 2 to 3.
 We applied the design upgrades to the previous model for the CDC, and found that these changes caused the coagulant dose to decrease.
 
 
-#Part 8
+### 8)
 The LFOM for the 20 L/s plant was designed to have a safety factor of 1.2 and the entrance tank water level changes by 20 cm as the flow goes from zero to 20 L/s. The LFOM for this design is an 8 inch SDR 26 pipe. Determine if the LFOM diameter will need to be increased to handle a flow of 30 L/s.
 
 ```python
@@ -206,7 +211,7 @@ print('The LFOM for the 30L/s plant has a diameter of',ut.round_sf(mylfom30.nom_
 
 print('The LFOM diameter will need to be increased from',mylfom20.nom_diam_pipe ,'to ',mylfom30.nom_diam_pipe ,'to handle a flow of 30 L/s, assuming that safety factor stays the same.')
 ```
-#Part 9
+### 9)
 Could you use the original LFOM diameter by increasing the depth of the entrance tank by 10 or 20 cm? The new LFOM depth range would then be either 30 or 40 cm.
 
 ```python
@@ -218,5 +223,5 @@ newLFOM1.nom_diam_pipe
 newLFOM2=lfom.LFOM(q=30*u.L/u.s,hl=40*u.cm,safety_factor=1.2)
 newLFOM2.nom_diam_pipe
 
-print('The new LFOM depth range of 30cm works with the original diameter, but the depth range of 40cm does not work with the original diameter.')
+print('The original diameter was 8 inch. The new LFOM depth range of 40cm works with the original diameter, but the depth range of 30cm does not work with the original diameter.')
 ```
