@@ -329,3 +329,4 @@ myF_10.ent_tank_L = 0*u.m
 myF_10.ent_tank_L
 myF_10.design
 ```
+No, we cannot have a single channel flocculator. This is due to the fact that the flocculator requires a level of symmetry. After passing through the channel, the water needs to return back to the origin of the flow so that they can pass through the filter entrance tank (filter box). In addition, if our sedimentation tank design end up being close to 7m, we would not be able to purchase a pipe of that length. The type of pipe required are only manufactured at around 6.5m.
