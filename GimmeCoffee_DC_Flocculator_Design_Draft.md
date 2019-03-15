@@ -53,29 +53,22 @@ print('The residence time is',ut.round_sf(Residence_time,3))
 
 How much head loss from wall shear will have occurred in the pipe in the distance measured in the previous problem? Compare this with the
 ```python
-Head_Loss = pc.headloss_fric(Q, Inner_Diameter, Distance, Nu, PipeRough)
+Head_Loss = (pc.headloss_fric(Q, Inner_Diameter, Distance, Nu, PipeRough)).to(u.cm)
+Head_Loss
 
 print('The head loss is',ut.round_sf(Head_Loss,3), '.')
 ```
-
 ### 4)
 
 What is the Camp Stein velocity gradient in this pipe flow?
-
 ```python
-G_cs = (((32*f)/(Nu*(np.pi**3)))*(((Q.to(u.m**3/u.s))**3)/((Inner_Diameter.to(u.m))**7)))**(1/2)
+G_cs = ((((32*f)/(Nu*(np.pi**3)))*(((Q.to(u.m**3/u.s))**3)/((Inner_Diameter.to(u.m))**7)))**(1/2)).to(u.Hz)
 G_cs
 print('The Camp Stein velocity gradient is',ut.round_sf(G_cs,3), '.')
 ```
 ### 5)
 
 What is the $G\theta$ for this mixing zone and how does it compare with the  $G\theta$ recommended for [mechanical mixing units](https://aguaclara.github.io/Textbook/Rapid_Mix/RM_Intro.html#maximum-velocity-gradients)?
-
-```
-Mix_HRT = np.array([0.5,15,25,35,85])*u.s
-Mix_G = np.array([4000,1500,950,850,750])/u.s
-Mix_Gt = np.multiply(Mix_HRT, Mix_G)
-```
 
 ```python
 Mix_HRT = np.array([0.5,15,25,35,85])*u.s
@@ -87,8 +80,6 @@ Mix_Gt_exp
 print('The $G\Theta$ for this mixing zone is',ut.round_sf(Mix_Gt_exp,3), '.')
 ```
 Our experimental $G\Theta$ is lower than that of the recommended $G\Theta$ in the lab manual.
-
-
 ### 6)
 
 What is the velocity gradient at the wall of the pipe? This will make it apparent that the velocity gradient is far from constant
@@ -97,6 +88,7 @@ What is the velocity gradient at the wall of the pipe? This will make it apparen
 G_wall = ((f)*(V_bar**2))/(8*Nu)
 G_wall
 print('The velocity gradient at the wall of the pipe is',ut.round_sf(G_wall,3),', which is far from',ut.round_sf(G_cs,3),'. Therefore, velocity gradient is not a constant.')
+
 ```
 ### 7)
 
@@ -107,46 +99,57 @@ $\varepsilon _{Max} = \Pi_{Plate}\frac{\bar v^3}{W_{Plate}}$
 $G_{Max} = \bar v\sqrt{\frac{\Pi_{Plate} \bar v}{\nu W_{Plate}}}$
 ```python
 width = (0.5*u.cm).to(u.m)
-EDR_Max = 0.04*u.W/u.kg
-pi_plate = (EDR_Max*width)/(V_bar**3)
+pi_plate = 0.04
 G_Max = (V_bar)*(((pi_plate*V_bar)/(Nu*width))**(1/2)).to_base_units()
-
 G_Max
 print('The maximum velocity gradient downstream of the plate is',ut.round_sf(G_Max,3))
-
 ```
 ### 8)
 What happens to the velocity gradient if a narrower flat plate is used? Does the maximum velocity gradient increase or decrease? Just look at the equation to answer this!
 
-The maximum velocity gradient does not change with the plate width because it cancels out in the equation.
+If a narrower flat plate is used, the velocity gradient would increase because the width of the plate is inversely proportionally to the velocity gradient, as seen in the equation used in the previous problem.
 
 ## Flocculation model
 
 ### 1)
 How far will two kaolin clay particles (density of 2650 $\frac{kg}{m^3}$) with a diameter of 5 $\mu m$ travel relative to each if they are in a uniform velocity gradient of 100 Hz for 400 s and separated (in the direction of the velocity gradient) by their average separation distance based on a turbidity of 0.5 NTU? (We have defined NTU as a unit based on the concentration of clay in the aguaclara distribution. Note that in a uniform velocity gradient $\bar G = G_{CS}$.
 
-  ```python
-  density = 2650*(u.kg/u.m**3)
-  diameter = 5*u.micrometer
-  G = 100*u.Hz
-  time = 400*u.sec
-  c_clay = 0.5*u.NTU
+ ```python
+import numpy as np
+from aguaclara.core.units import unit_registry as u
+from aguaclara.core import physchem as pc, utility as ut
 
-  n_clay=fm.num_clay(c_clay,fm.Clay)
-  lambda_Clay=fm.sep_dist_clay(c_clay,fm.Clay)
+u.enable_contexts('chem')
 
-  print('The separation distance is',ut.round_sf(lambda_Clay.to(u.mm),3), '.')
+density = 2650*(u.kg/u.m**3)
+diameter = (5*u.micrometer)
+G = 100*u.Hz
+time = 400*u.sec
+c_clay = 0.5*u.NTU
 
-  ```
+lambda_clay = ((density/c_clay)*((np.pi*diameter**3)/6))**(1/3)
+
+velocity = lambda_clay * G
+distance = velocity * time
+distance = distance.to_base_units()
+
+print('The separation distance is' ,ut.round_sf(lambda_clay.to(u.mm),3), '.')
+print('The distance traveled relative to each other is',ut.round_sf(distance,2),'.')
+
+```
 ### 2)
 
 How much volume is "cleared" by these particles divided by the volume occupied by the particles? This ratio is essentially how many times these particles should have collided in the 400 s.
-
 ```python
-V_cleared = (math.pi*(diameter**2)*lambda_Clay*G*time).to_base_units()
-V_cleared
+V_cleared = (math.pi*(diameter**2)*lambda_clay*G*time).to_base_units()
+V_cleared = V_cleared.to(u.uL)
 
-print('The volume "cleared" by these particles is ',ut.round_sf(V_cleared.to(u.mm**3),3))
+volume_particles = (lambda_clay)**3
+
+ratio = V_cleared/volume_particles
+ratio = ratio.to_base_units()
+
+print('The ratio between the volume cleared and the volume occupied is',ut.round_sf(ratio,3))
 
 ```
 The above calculations illustrate why 1 NTU is a practical limit for flocculation. Assuming that we don't want to apply so much coagulant that the clay particles are completely covered with coagulant, then some fraction of the collisions will be ineffective. Thus at 1 NTU a $G \theta$ of 40,000 might only cause one successful collisions
@@ -204,26 +207,91 @@ myF.design
 How many expansions are there in total? Estimate this based on the spacing and flocculator size. You will have to account for the entrance tank that occupies volume in the first flocculator channel.
 
 ```Python
-
+Length = myF.channel_L
+Width = ut.round_sf(myF.channel_W,2)
+Ent_Length = myF.ent_tank_L
+Area_Ent_Tank = Ent_Length*Width
+Spacing_Area = (ut.round_sf(myF.baffle_S,2)).to(u.m)*Width
+Area = Length*Width
+Total_Area = (Area*2)-Area_Ent_Tank
+baffles = Total_Area/Spacing_Area
+Expansions = np.floor(baffles*myF.expansion_n)
+Expansions
+print('The number of expansions in total is',ut.round_sf(Expansions,3),'.')
 ```
+    Expansions should be a dimensionless number yours has the unit of length. Also make sure to take into account the entrance tank being in the flocculator
 
 ### 2)
 What is the head loss per expansion? (Calculate this head loss using the minor loss equation) You can use the BAFFLE_K that is defined in the flocculator class.
 ```python
+import math
+K = floc.Flocculator.BAFFLE_K
+g = constants.GRAVITY
+A = Width*(ut.round_sf(myF.baffle_S,2))
+V = Q/A
+Head_Loss = (K*(V**2)/(2*g))
+Head_Loss = Head_Loss.to(u.mm)
 
+print('The head loss per expansion is',ut.round_sf(Head_Loss,3),'.')
 ```
 
 ### 3)
 What is the total head loss of all of the expansions? Compare this with the target head loss of 40 cm.
 ```Python
-
+Total_Head_Loss = Head_Loss*Expansions
+print('The total head loss per expansion is',ut.round_sf(Total_Head_Loss.to(u.cm),3),'.')
 ```
-
 ### 4)
 Change the design temperature over a range that would be applicable in Ithaca (0 to 30 degC) for a flocculator design of your choice. What happens as the temperature increases? Plot residence time, velocity gradient, baffle spacing, and number of channels as functions of temperature. Explain WHY these design changes occur.
 
 ```Python
+import matplotlib.pyplot as plt
 
+Temp = ((np.arange(0,33,3))*u.degC)
+Residence_time = np.zeros(11)
+Velocity_gradient = np.zeros(11)
+Baffle_Spacing = np.zeros(11)
+Channel_Num = np.zeros(11)
+
+for i in range(Temp.size):
+  Q = 60 * u.L/u.s
+  myF = floc.Flocculator( Q=Q, temp = Temp[i])
+  Residence_time[i] = (ut.round_sf(myF.retention_time,2)).magnitude
+  Velocity_gradient[i] = (ut.round_sf(myF.vel_grad_avg,2)).magnitude
+  Baffle_Spacing[i] = (ut.round_sf(myF.baffle_S,2)).magnitude
+  Channel_Num[i] = (ut.round_sf(myF.channel_n,2)).magnitude
+
+Residence_time = Residence_time*u.s
+Velocity_gradient = Velocity_gradient*(u.Hz)
+Baffle_Spacing = Baffle_Spacing*u.cm
+
+#Residence Time vs Temperature
+plt.plot(Temp, Residence_time)
+plt.xlabel('Temperature (K)')
+plt.ylabel('Residence Time (seconds)')
+plt.title('Residence Time vs Temperature')
+plt.show()
+
+#Velocity Gradient vs Temperature
+plt.plot(Temp, Velocity_gradient)
+plt.xlabel('Temperature (K)')
+plt.ylabel('Velocity Gradient (Hertz)')
+plt.title('Velocity Gradient vs Temperature')
+plt.show()
+
+#Baffle Spacing vs Temperature
+plt.plot(Temp, Baffle_Spacing,'o')
+plt.xlabel('Temperature (K)')
+plt.ylabel('Baffle Spacing (cm)')
+plt.title('Baffle Spacing vs Temperature')
+plt.show()
+
+#Number of Channels vs Temperature
+plt.plot(Temp, Channel_Num,'o')
+plt.xlabel('Temperature (K)')
+plt.ylabel('Number of Channels (dimensionless)')
+plt.title('Number of Channels vs Temperature')
+plt.show()
 
 ```
 
@@ -232,7 +300,7 @@ The water becomes more viscous as it gets colder. Thus it becomes more difficult
 ### 5)
 When designing a flocculator how should you select the design temperature?
 
-Use the lowest expected temperature for the design temperature.
+When designing a flocculator, you should select the design temperature based off of the lowest expected temperature for the design temperature so that your flocculator is still functional in case of extreme weather.
 
 
 ### 6)
@@ -242,5 +310,22 @@ List as many design implications as you can think of for this potential change. 
 
 
 ```Python
+#Flocculator 1
+Q = 60 * u.L/u.s
+Gt = 20000
+temp = 15 * u.degC
+HL = 50*u.cm
+myF_60= floc.Flocculator(Q=Q, Gt=Gt, temp=temp, HL=HL)
+myF_60.ent_tank_L = 0*u.m
+myF_60.design
 
+#Flocculator 2
+Q = 10 * u.L/u.s
+Gt = 20000
+temp = 15 * u.degC
+HL = 50*u.cm
+myF_10= floc.Flocculator(Q=Q, Gt=Gt, temp=temp, HL=HL)
+myF_10.ent_tank_L = 0*u.m
+myF_10.ent_tank_L
+myF_10.design
 ```
